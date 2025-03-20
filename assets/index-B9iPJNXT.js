@@ -46,7 +46,7 @@ const ErrorPage = () => {
   errorPageContainer.className = "error-page-container";
   errorPageContainer.innerHTML = /*html*/
   `
-      <img src="./images/으아아행성이.png" alt="error-page-image" class="error-page-image" />
+      <img src="images/으아아행성이.png" alt="error-page-image" class="error-page-image" />
       <h1>오류가 발생했습니다.</h1>
       ${CustomButton({
     title: "홈으로 돌아가기",
@@ -93,18 +93,18 @@ const Header = (movie) => {
       <div class="top-rated-container">
         <div class="header-container">
           <a href="/" class="logo">
-            <img src="./images/logo.png" alt="MovieList" />
+            <img src="images/logo.png" alt="MovieList" />
           </a>
           <form class="search-form">
             <input id="search-input" name="search-input" type="text" placeholder="검색어를 입력하세요" />
             <button type="submit" class="search-button">
-              <img src="./images/search.png" alt="Search" />
+              <img src="images/search.png" alt="Search" />
             </button>
           </form>
         </div>
         <div class="top-rated-movie">
           <div class="rate">
-            <img src="./images/star_empty.png" class="star" />
+            <img src="images/star_empty.png" class="star" />
             <span class="rate-value">${movie.vote_average}</span>
           </div>
           <div class="title">${movie.name}</div>
@@ -152,7 +152,7 @@ const MoviePost = (movie) => {
       />
       <div class="item-desc">
         <p class="rate">
-          <img src="./images/star_empty.png" class="star" /><span
+          <img src="images/star_empty.png" class="star" /><span
             >${movie.vote_average.toFixed(1)}</span
           >
         </p>
@@ -167,7 +167,7 @@ const EmptySearchResult = () => {
   emptySearchResult.classList.add("empty-search-result-container");
   emptySearchResult.innerHTML = /*html*/
   `
-    <img src="./images/으아아행성이.png" alt="검색 결과가 없습니다." class="empty-search-result-image"/>
+    <img src="images/으아아행성이.png" alt="검색 결과가 없습니다." class="empty-search-result-image"/>
     <p class="empty-search-result-text">검색 결과가 없습니다.</p>
   `;
   return emptySearchResult;
