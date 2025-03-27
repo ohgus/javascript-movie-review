@@ -35,34 +35,26 @@
     fetch(link.href, fetchOpts);
   }
 })();
-const CustomButton = ({
-  title,
-  className = "",
-  id = ""
-}) => {
-  const customButton = document.createElement("button");
-  customButton.className = `primary detail ${className}`;
-  customButton.textContent = title;
-  customButton.id = id;
-  return customButton;
+const mapToMovie = (movie) => {
+  return {
+    id: movie.id,
+    backdrop_path: movie.backdrop_path,
+    original_language: movie.original_language,
+    original_title: movie.original_title,
+    overview: movie.overview,
+    poster_path: movie.poster_path,
+    release_date: movie.release_date,
+    title: movie.title,
+    vote_average: movie.vote_average
+  };
 };
-const ErrorPage = () => {
-  const errorPageContainer = document.createElement("div");
-  errorPageContainer.className = "error-page-container";
-  errorPageContainer.innerHTML = /*html*/
-  `
-      <img src="images/으아아행성이.png" alt="error-page-image" class="error-page-image" />
-      <h1>오류가 발생했습니다.</h1>
-      ${CustomButton({
-    title: "홈으로 돌아가기",
-    className: "error-page-button"
-  }).outerHTML}
-  `;
-  const errorPageButton = errorPageContainer.querySelector(".error-page-button");
-  errorPageButton.addEventListener("click", () => {
-    window.location.replace("/");
-  });
-  return errorPageContainer;
+const mapToMovieList = (moviesResponse) => {
+  return {
+    page: moviesResponse.page,
+    results: moviesResponse.results.map(mapToMovie),
+    total_pages: moviesResponse.total_pages,
+    total_results: moviesResponse.total_results
+  };
 };
 const url$1 = (page) => `https://api.themoviedb.org/3/movie/popular?language=ko-KR&page=${page}`;
 const options$1 = {
@@ -72,17 +64,15 @@ const options$1 = {
     Authorization: `Bearer ${"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI3N2Y0ZmFlZTIxYmQ0M2YwMWY5ZmQ1ZDlkNjY1M2EyNyIsIm5iZiI6MTc0MjI3NDc2Ni43MDEsInN1YiI6IjY3ZDkwMGNlMGFmNjIyNThhOTM2NGRkOCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.ModchKnwSChKrlLlxvrvG4WdY6TtJoqW65DmX_o98b0"}`
   }
 };
-const getMovieList = async ({ page }) => {
-  try {
-    const response = await fetch(url$1(page), options$1);
-    if (!response.ok) {
-      throw new Error("Failed to fetch movie list");
-    }
-    return response.json();
-  } catch (error) {
-    const $container = document.querySelector(".container");
-    $container.replaceChildren(ErrorPage());
+const getMovieList = async ({
+  page
+}) => {
+  const response = await fetch(url$1(page), options$1);
+  if (!response.ok) {
+    throw new Error("Failed to fetch movie list");
   }
+  const data = await response.json();
+  return mapToMovieList(data);
 };
 const url = (query, page) => `https://api.themoviedb.org/3/search/movie?query=${query}&include_adult=true&language=ko-KR&page=${page}`;
 const options = {
@@ -93,16 +83,23 @@ const options = {
   }
 };
 const getSearchedPost = async (query, page) => {
-  try {
-    const response = await fetch(url(query, page), options);
-    if (!response.ok) {
-      throw new Error("Failed to fetch searched post");
-    }
-    return response.json();
-  } catch (error) {
-    const $container = document.querySelector(".container");
-    $container.replaceChildren(ErrorPage());
+  const response = await fetch(url(query, page), options);
+  if (!response.ok) {
+    throw new Error("Failed to fetch searched post");
   }
+  const data = await response.json();
+  return mapToMovieList(data);
+};
+const CustomButton = ({
+  title,
+  className = "",
+  id = ""
+}) => {
+  const customButton = document.createElement("button");
+  customButton.className = `primary detail ${className}`;
+  customButton.textContent = title;
+  customButton.id = id;
+  return customButton;
 };
 const SearchForm = () => {
   const searchForm = document.createElement("form");
@@ -214,34 +211,70 @@ function disableMoreButton(totalPages, currentPage, movieList) {
     $moreMoviesButton == null ? void 0 : $moreMoviesButton.classList.add("disabled");
   }
 }
-const searchFormSubmitHandler = async (e) => {
-  const formData = new FormData(e.target);
-  const searchQuery = formData.get("search-input");
-  const params = new URLSearchParams({
-    page: "1",
-    query: searchQuery
+const ErrorPage = () => {
+  const errorPageContainer = document.createElement("div");
+  errorPageContainer.className = "error-page-container";
+  errorPageContainer.innerHTML = /*html*/
+  `
+      <img src="images/으아아행성이.png" alt="error-page-image" class="error-page-image" />
+      <h1>오류가 발생했습니다.</h1>
+      ${CustomButton({
+    title: "홈으로 돌아가기",
+    className: "error-page-button"
+  }).outerHTML}
+  `;
+  const errorPageButton = errorPageContainer.querySelector(".error-page-button");
+  errorPageButton.addEventListener("click", () => {
+    window.location.replace("/");
   });
-  const pageNum = params.get("page") ? parseInt(params.get("page")) : 1;
-  const searchedMovies = await getSearchedPost(searchQuery, pageNum);
-  updateSearchPageUI(
-    searchedMovies.results,
-    searchedMovies.total_pages,
-    params
-  );
+  return errorPageContainer;
+};
+const showErrorPage = () => {
+  const $container = document.querySelector(".container");
+  if (!$container) return;
+  $container.replaceChildren(ErrorPage());
+};
+const setParams = (query = "", page = 1) => {
+  const params = new URLSearchParams(window.location.search);
+  if (query !== "") {
+    params.set("query", query);
+  }
+  params.set("page", page.toString());
   const newUrl = `${window.location.pathname}?${params.toString()}`;
   history.pushState(null, "", newUrl);
 };
-function updateSearchPageUI(searchedMovies, searchedMoviesTotalPages, params) {
+const getParams = (url2) => {
+  const params = new URLSearchParams(url2.search);
+  const query = params.get("query") ?? null;
+  const pageStr = params.get("page");
+  const currentPage = pageStr ? parseInt(pageStr) : 1;
+  const nextPage = currentPage + 1;
+  return { query, currentPage, nextPage };
+};
+const searchFormSubmitHandler = async (e) => {
+  try {
+    const formData = new FormData(e.target);
+    const searchQuery = formData.get("search-input");
+    setParams(searchQuery, 1);
+    const { currentPage } = getParams(new URL(window.location.href));
+    const searchedMovies = await getSearchedPost(searchQuery, currentPage);
+    updateSearchPageUI(searchedMovies.results, searchedMovies.total_pages, {
+      pageNum: currentPage,
+      searchQuery
+    });
+  } catch (error) {
+    showErrorPage();
+  }
+};
+function updateSearchPageUI(searchedMovies, searchedMoviesTotalPages, { pageNum, searchQuery }) {
   const $thumbnailList = document.querySelector(
     ".thumbnail-list"
   );
   const $movieListTitle = document.querySelector(".movie-list-title");
-  const pageNum = params.get("page") ? parseInt(params.get("page")) : 1;
-  const query = params.get("query");
   if (!$thumbnailList || !$movieListTitle) return;
   $thumbnailList.innerHTML = "";
   showSkeletons($thumbnailList);
-  $movieListTitle.textContent = `"${query}" 검색 결과`;
+  $movieListTitle.textContent = `"${searchQuery}" 검색 결과`;
   $thumbnailList.innerHTML = "";
   addMoviePost(searchedMovies, $thumbnailList);
   disableHeaderImage();
@@ -264,7 +297,7 @@ const Header = (movie) => {
   `
     <div class="background-container">
       <div class="overlay" aria-hidden="true">
-        <img src="https://media.themoviedb.org/t/p/w440_and_h660_face${movie.poster_path}" alt="MovieList" />
+        <img src="https://media.themoviedb.org/t/p/w440_and_h660_face${movie.backdrop_path}" alt="MovieList" />
       </div>
       <div class="top-rated-container">
         <div class="header-container">
@@ -291,24 +324,24 @@ const Header = (movie) => {
   });
 };
 async function addMoreMovies($movieList) {
-  const params = new URLSearchParams(window.location.search);
-  const query = params.get("query") ?? null;
-  const pageStr = params.get("page");
-  const currentPage = pageStr ? parseInt(pageStr) : 1;
-  const nextPage = currentPage + 1;
-  if (!pageStr) return;
-  params.set("page", nextPage.toString());
+  const { query, currentPage, nextPage } = getParams(
+    new URL(window.location.href)
+  );
+  setParams(query ?? "", nextPage);
   const movies = await getCurrentMovieList(nextPage, query);
+  if (!movies) return;
   addMoviePost(movies.results, $movieList);
   disableMoreButton(movies.total_pages, currentPage, movies.results);
-  const newUrl = `${window.location.pathname}?${params.toString()}`;
-  history.pushState(null, "", newUrl);
 }
 async function getCurrentMovieList(page, query) {
-  if (query) {
-    return await getSearchedPost(query, page);
+  try {
+    if (query) {
+      return await getSearchedPost(query, page);
+    }
+    return await getMovieList({ page });
+  } catch (error) {
+    showErrorPage();
   }
-  return await getMovieList({ page });
 }
 addEventListener("DOMContentLoaded", async () => {
   const $movieList = document.querySelector(".thumbnail-list");
@@ -316,20 +349,25 @@ addEventListener("DOMContentLoaded", async () => {
   await initAddMoreMoviesButton($movieList);
 });
 async function initMovieList(movieList) {
-  const url2 = new URL(window.location.href);
-  const params = new URLSearchParams(url2.search);
-  const query = params.get("query");
-  const movies = query ? await getSearchedPost(query, 1) : await getMovieList({ page: 1 });
-  if (!movies || !movieList) return;
-  showSkeletons(movieList);
-  Header(movies.results[0]);
-  if (query) {
-    initializeUrl(url2);
-    updateSearchPageUI(movies.results, movies.total_pages, url2.searchParams);
-  } else {
-    initializeUrl(url2);
-    movieList.innerHTML = "";
-    addMoviePost(movies.results, movieList);
+  try {
+    const { query } = getParams(new URL(window.location.href));
+    const movies = query ? await getSearchedPost(query, 1) : await getMovieList({ page: 1 });
+    if (!movies || !movieList) return;
+    showSkeletons(movieList);
+    Header(movies.results[0]);
+    if (query) {
+      initializeUrl();
+      updateSearchPageUI(movies.results, movies.total_pages, {
+        pageNum: 1,
+        searchQuery: query
+      });
+    } else {
+      initializeUrl();
+      movieList.innerHTML = "";
+      addMoviePost(movies.results, movieList);
+    }
+  } catch (error) {
+    showErrorPage();
   }
 }
 async function initAddMoreMoviesButton(movieList) {
@@ -348,7 +386,6 @@ async function initAddMoreMoviesButton(movieList) {
     await addMoreMovies(movieList);
   });
 }
-function initializeUrl(url2) {
-  url2.searchParams.set("page", "1");
-  window.history.replaceState({}, document.title, url2.toString());
+function initializeUrl() {
+  setParams("", 1);
 }
