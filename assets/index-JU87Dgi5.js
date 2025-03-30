@@ -585,7 +585,7 @@ const Header = (movie) => {
       </div>
       <div class="top-rated-container">
         <div class="header-container">
-          <a href="/javascript-movie-review/" class="logo">
+          <a href="/" class="logo">
             <img src="images/logo.png" alt="MovieList" />
           </a>
           ${SearchForm().outerHTML}
