@@ -293,6 +293,9 @@ footer.footer p:not(:last-child) {
   height: 130px;
   object-fit: cover;
 }
+.observer-target {
+  visibility: hidden;
+}
 /* modal.css */
 body.modal-open {
   overflow: hidden !important;
@@ -705,6 +708,28 @@ p.rate > span {
 }
 .skeleton-item {
   animation: skeleton-loading 1.5s infinite;
+}
+.skeleton-header {
+  width: 100%;
+  padding: 20px;
+  background-color: var(--color-242a32);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.skeleton-logo {
+  width: 150px;
+  height: 30px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+}
+.skeleton-search {
+  width: 100%;
+  max-width: 400px;
+  height: 40px;
+  background-color: #e0e0e0;
+  border-radius: 20px;
 }
 .skeleton-thumbnail {
   width: 100%;

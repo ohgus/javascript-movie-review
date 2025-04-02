@@ -56,6 +56,7 @@ const SearchForm = () => {
       name="search-input"
       type="text"
       placeholder="검색어를 입력하세요"
+      required
     />
     <button type="submit" class="search-button">
       <img src="images/search.png" alt="Search" />
@@ -177,7 +178,7 @@ const fetchApi = async (url, mapper) => {
     ...API_OPTIONS
   });
   if (!response.ok) {
-    throw new Error(`영화 데이터를 불러오는데 실패했습니다.`);
+    throw new Error(response.status.toString());
   }
   const data = await response.json();
   return mapper(data);
@@ -494,6 +495,16 @@ const getMovieList = async ({
   });
   return fetchApi(url, mapToMovieList);
 };
+const errorMessageParser = (error) => {
+  let errorMessage = "영화를 불러오는데 실패했습니다.";
+  if (error.message.includes("404")) {
+    errorMessage = "요청하신 페이지를 찾을 수 없습니다.";
+  }
+  if (error.message.includes("500")) {
+    errorMessage = "서버에 문제가 있습니다.";
+  }
+  return errorMessage;
+};
 async function getCurrentMovieList(page, query) {
   try {
     if (query) {
@@ -501,7 +512,7 @@ async function getCurrentMovieList(page, query) {
     }
     return await getMovieList({ page });
   } catch (error) {
-    showErrorPage("영화 목록을 불러오는데 실패했습니다.");
+    showErrorPage(errorMessageParser(error));
   }
 }
 async function addMoreMovies($movieList) {
@@ -514,7 +525,7 @@ async function addMoreMovies($movieList) {
     }
     addMoviePost(movies.results, $movieList);
     pageManager.incrementCurrentPage();
-    pageManager.setTotalPages(movies.total_pages);
+    pageManager.setTotalPages(movies.totalPages);
     return {
       success: true
     };
@@ -547,29 +558,20 @@ const createIntersectionObserver = ({
         isLoading = false;
         return;
       }
-      observer.unobserve(entry.target);
-      updateObserverTarget(observer);
       isLoading = false;
     }
   };
   return new IntersectionObserver(onIntersectHandler, options);
 };
-function updateObserverTarget(observer) {
-  observer.disconnect();
-  const thumbnails = document.querySelectorAll(".thumbnail");
-  if (thumbnails.length === 0) return;
-  const lastThumbnail = thumbnails[thumbnails.length - 1];
-  observer.observe(lastThumbnail);
-}
 function initInfiniteScroll() {
-  const $movieContainer = document.getElementById("movie-container");
-  if (!$movieContainer) return;
+  const $target = document.querySelector(".observer-target");
+  if (!$target) return;
   if (pageManager.isLastPage()) return;
   const observer = createIntersectionObserver({
     onIntersect: handleIntersect,
     onError: showErrorPage
   });
-  updateObserverTarget(observer);
+  observer.observe($target);
 }
 async function handleIntersect() {
   const $movieList = document.querySelector(".thumbnail-list");
@@ -593,7 +595,7 @@ const searchFormSubmitHandler = async (e) => {
     });
     initInfiniteScroll();
   } catch (error) {
-    showErrorPage("검색 결과를 불러오는데 실패했습니다.");
+    showErrorPage(errorMessageParser(error));
   }
 };
 const Header = (movie) => {
@@ -637,6 +639,15 @@ const Header = (movie) => {
     $wrap == null ? void 0 : $wrap.appendChild(Modal(movieDetail));
   });
 };
+const HeaderSkeleton = () => {
+  const template = `
+    <div class="skeleton-header">
+      <div class="skeleton-logo skeleton-item"></div>
+      <div class="skeleton-search skeleton-item"></div>
+    </div>
+  `;
+  return template;
+};
 addEventListener("DOMContentLoaded", async () => {
   const $movieList = document.querySelector(".thumbnail-list");
   await initMovieList($movieList);
@@ -644,6 +655,9 @@ addEventListener("DOMContentLoaded", async () => {
 });
 async function initMovieList(movieList) {
   try {
+    const $header = document.getElementById("header");
+    if (!$header) return;
+    $header.innerHTML = HeaderSkeleton();
     showSkeletons(movieList);
     const query = getQueryParam(new URL(window.location.href), "query");
     const movies = await getCurrentMovieList(pageManager.currentPage, query);
@@ -661,6 +675,6 @@ async function initMovieList(movieList) {
       addMoviePost(movies.results, movieList);
     }
   } catch (error) {
-    showErrorPage("페이지 로드에 실패했습니다.");
+    showErrorPage(errorMessageParser(error));
   }
 }
